@@ -1,0 +1,181 @@
+---
+title: "Additional analysis in relation to iconicity ratings"
+author: "Bodo"
+date: "19/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preprocessing
+
+Load package:
+
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(effsize)
+```
+
+## Re-analysis of data from Thompson et al. (2020)
+
+Load data:
+
+```{r, message = FALSE, warning = FALSE}
+icon <- read_csv('English_Iconicity_Ratings.csv')
+```
+
+
+Average ratings by word, keeping stratum and etymology columns:
+
+```{r}
+avgs <- icon %>% group_by(word, stratum, etymology) %>% 
+  summarize(rating = mean(rating))
+```
+
+Get subset of Germanic words:
+
+```{r}
+ger <- filter(avgs, stratum == 'Germanic')
+```
+
+## Analysis of imitative versus non-imitative origin with Thompson et al.'s data:
+
+Check means:
+
+```{r}
+ger %>% group_by(etymology) %>% 
+  summarize(M = mean(rating))
+```
+
+Plot this:
+
+```{r, width = 4, height = 7}
+ger %>% ggplot(aes(x = etymology, fill = etymology, y = rating)) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = 'Spectral') +
+  theme_minimal()
+```
+
+Perform a t-test of this:
+
+```{r}
+with(ger, t.test(rating ~ etymology, var.equal = TRUE))
+```
+
+What is the effect size of thsi?
+
+```{r}
+with(ger, cohen.d(rating ~ etymology, var.equal = TRUE))
+```
+
+
+## Analysis of Winter (2016) data:
+
+Load packages and data:
+
+```{r, message = FALSE, warning = FALSE}
+icon <- read_csv('iconicity_ratings.csv') # winter et al. 2017 ratings
+OED <- read_csv('all_words_OED_etymology.csv') # OED etymologies from winter 2016
+```
+
+Join datasets:
+
+```{r}
+OED <- left_join(OED, icon)
+```
+
+Check number of origins:
+
+```{r}
+table(OED$Origin)
+```
+
+Recode to make groupings in analogy to Thompson et al. — those of suspected imitative origin are coded as imitative (doesn't change much if these are re-assigned):
+
+```{r}
+OED <- mutate(OED,
+              OriginFull = Origin,
+              Origin = ifelse(Origin == 'Anglo-Norman', 'other', Origin),
+              Origin = ifelse(Origin == 'French borrowing', 'French', Origin),
+              Origin = ifelse(Origin == 'Germanic, perhaps ultimatively imitative', 'imitative', Origin),
+              Origin = ifelse(Origin == 'Germanic/probably imitative', 'imitative', Origin),
+              Origin = ifelse(Origin == 'Greek borrowing', 'other', Origin),
+              Origin = ifelse(Origin == 'Italian borrowing', 'other', Origin),
+              Origin = ifelse(Origin == 'Morocco', 'other', Origin),
+              Origin = ifelse(Origin == 'Old Norse', 'other', Origin),
+              Origin = ifelse(Origin == 'origin unknown', 'unclear', Origin),
+              Origin = ifelse(Origin == 'possibly Celtic ', 'other', Origin),
+              Origin = ifelse(Origin == 'probably Germanic ', 'Germanic', Origin),
+              Origin = ifelse(Origin == 'probably Old Norse', 'other', Origin),
+              Origin = ifelse(Origin == 'probably Scandinavian', 'other', Origin),
+              Origin = ifelse(Origin == 'Spanish', 'other', Origin),
+              Origin = ifelse(Origin == 'Scandinavian', 'other', Origin),
+              Origin = ifelse(Origin == 'Scottish', 'other', Origin),
+              Origin = ifelse(Origin == 'probably Dutch', 'other', Origin),
+              Origin = ifelse(Origin == 'probably Spanish', 'other', Origin),
+              Origin = ifelse(Origin == 'probably French', 'French', Origin),
+              Origin = ifelse(Origin == 'probably Germanic', 'Germanic', Origin),
+              Origin = ifelse(Origin == 'probably Latin', 'Latin borrowing', Origin),
+              Origin = ifelse(Origin == 'French borrowing', 'French', Origin),
+              Origin = ifelse(Origin == 'possibly French borrowing', 'French', Origin),
+              Origin = ifelse(Origin == 'possibly imitative', 'imitative', Origin),
+              Origin = ifelse(Origin == 'possibly Celtic', 'other', Origin),
+              Origin = ifelse(Origin == 'probably imitative', 'imitative', Origin),
+              Origin = ifelse(Origin == 'Spanish borrowing', 'other', Origin),
+              Origin = ifelse(Origin == 'unclear, partly imitative', 'imitative', Origin),
+              Origin = ifelse(Origin == 'unclear, probably Scandinavian', 'other', Origin),
+              Origin = ifelse(Origin == 'Urdu', 'other', Origin))
+```
+
+Check again:
+
+```{r}
+table(OED$Origin)
+```
+
+Test the iconicity effect:
+
+```{r}
+xmdl <- lm(Iconicity ~ Origin, data = OED)
+anova(xmdl)
+summary(xmdl)
+```
+
+Do an imitative versus rest:
+
+```{r}
+OED <- mutate(OED, ImitativeOrNot = ifelse(Origin == 'imitative', 'imitative', 'not_imitative'))
+```
+
+Test this:
+
+```{r}
+t.test(Iconicity ~ ImitativeOrNot, data = OED, var.equal = TRUE)
+```
+
+Also effect size:
+
+```{r}
+cohen.d(Iconicity ~ ImitativeOrNot, data = OED, var.equal = TRUE)
+```
+
+Perform post-hoc comparisons:
+
+```{r}
+myaov <- aov(Iconicity ~ Origin, data = OED)
+TukeyHSD(myaov)
+```
+
+
+
+
+
+
+
+
+
+
+
+
