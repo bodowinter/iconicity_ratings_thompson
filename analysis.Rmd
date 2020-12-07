@@ -1,6 +1,6 @@
 ---
 title: "Additional analysis in relation to iconicity ratings"
-author: "Bodo"
+author: "anonymous"
 date: "19/10/2020"
 output: html_document
 ---
@@ -167,15 +167,4 @@ Perform post-hoc comparisons:
 myaov <- aov(Iconicity ~ Origin, data = OED)
 TukeyHSD(myaov)
 ```
-
-
-
-
-
-
-
-
-
-
-
 
